@@ -1,14 +1,11 @@
 const express = require('express');
 const speakeasy = require('speakeasy'); // this is
-const bodyParser = require('body-parser');
 const uuid = require('uuid');
 
 const { JsonDB, Config } = require('node-json-db');
 
 const app = express();
 
-// app.use(bodyParser.json());
-// app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
 const db = new JsonDB(new Config('myDataBase', true, false, '/'));
@@ -70,7 +67,7 @@ app.post('/api/validate', async (req, res) => {
 
     const path = `/user/${userId}`;
     const user = await db.getData(path);
-    console.log({ user });
+    console.log('----> 2', { user });
     const { base32: secret } = user.secret;
 
     // Returns true if the token matches
