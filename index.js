@@ -1,9 +1,15 @@
 const express = require('express');
-const speakeasy = require('speakeasy'); // this is generates a secret from speakeasy
+const speakeasy = require('speakeasy'); // this is
+const bodyParser = require('body-parser');
 const uuid = require('uuid');
+
 const { JsonDB, Config } = require('node-json-db');
 
 const app = express();
+
+// app.use(bodyParser.json());
+// app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
 
 const db = new JsonDB(new Config('myDataBase', true, false, '/'));
 
@@ -27,9 +33,35 @@ app.post('/api/register', (req, res) => {
   }
 });
 
-// once user is registered we'll create another route to verify using the authenticator to get a token and then we can verify that token against the temporary secret in the databse and if it validates or verifies then were going to change it from temp secret to secret
+// Verify token and make secret perm
 
-//and then we'll have a final route where we can just validate with any token from the authenticator
+app.post('/api/verify', async (req, res) => {
+  const { userId, token } = req.body;
+  try {
+    // Retrieve user from database
+    const path = `/user/${userId}`;
+    const user = await db.getData(path);
+    console.log('----> 1', { user });
+    console.log('-----> 2', user.secret);
+    console.log('-----> 3', user.temp_secret);
+    const { base32: secret } = user.temp_secret;
+    const verified = speakeasy.totp.verify({
+      secret,
+      encoding: 'base32',
+      token,
+    });
+    if (verified) {
+      // Update user data
+      db.push(path, { id: userId, secret: user.temp_secret });
+      res.json({ verified: true });
+    } else {
+      res.json({ verified: false });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error retrieving user' });
+  }
+});
 
 const PORT = process.env.PORT || 8080;
 
