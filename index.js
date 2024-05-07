@@ -58,7 +58,7 @@ app.post('/api/verify', async (req, res) => {
   }
 });
 
-//Final route - To continously validate tokens / passcodes from the authenticator to the user
+// Final route - To continously validate tokens / passcodes from the authenticator to the user
 
 app.post('/api/validate', async (req, res) => {
   const { userId, token } = req.body;
