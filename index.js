@@ -41,9 +41,7 @@ app.post('/api/verify', async (req, res) => {
     // Retrieve user from database
     const path = `/user/${userId}`;
     const user = await db.getData(path);
-    console.log('----> 1', { user });
-    console.log('-----> 2', user.secret);
-    console.log('-----> 3', user.temp_secret);
+    console.log('---->', { user });
     const { base32: secret } = user.temp_secret;
     const verified = speakeasy.totp.verify({
       secret,
@@ -56,6 +54,37 @@ app.post('/api/verify', async (req, res) => {
       res.json({ verified: true });
     } else {
       res.json({ verified: false });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error retrieving user' });
+  }
+});
+
+//Final route - To continously validate tokens / passcodes from the authenticator to the user
+
+app.post('/api/validate', async (req, res) => {
+  const { userId, token } = req.body;
+  try {
+    // Retrieve user from database
+
+    const path = `/user/${userId}`;
+    const user = await db.getData(path);
+    console.log({ user });
+    const { base32: secret } = user.secret;
+
+    // Returns true if the token matches
+
+    const tokenValidates = speakeasy.totp.verify({
+      secret,
+      encoding: 'base32',
+      token,
+      window: 1,
+    });
+    if (tokenValidates) {
+      res.json({ validated: true });
+    } else {
+      res.json({ validated: false });
     }
   } catch (error) {
     console.error(error);
